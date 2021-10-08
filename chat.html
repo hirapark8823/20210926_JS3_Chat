@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../kadai/chat.css">
+    <title>CHAT</title>
+</head>
+
+<body>
+    <!-- <h1>稲葉さんとCHAT</h1>
+
+    <ul>
+        <li>
+            <label for='name' id="name">B'z 稲葉浩志</label>
+        </li>
+        <li>
+            <textarea name="" id="text" cols="30" rows="10"></textarea>
+        </li>
+        <li>
+            <button id='send'>RUN</button>
+        </li>
+    </ul> -->
+
+    <ul id="output"></ul>
+    <!-- <h3 id="me" user_id="1">あなたはユーザー1です</h3>
+    <h3 id="partner" thread_id="1">相手</h3>
+    <div id="users">
+        <button class="user" user_id="2">ユーザー2</button>
+    </div>
+    <br> -->
+
+    <div id="your_container">
+        <!-- チャットの外側部分① -->
+        <div id="bms_messages_container">
+            <!-- ヘッダー部分② -->
+            <div id="bms_chat_header">
+                <!--ステータス-->
+                <div id="bms_chat_user_status">
+                    <!--ユーザー名-->
+                    <div id="bms_chat_user_name">B'z 稲葉浩志</div>
+                </div>
+            </div>
+
+            <!-- タイムライン部分③ -->
+            <div id="bms_messages">
+
+                <!--メッセージ１（左側）-->
+                <div class="bms_message bms_left">
+                    <div class="bms_message_box">
+                        <div class="bms_message_content">
+                            <div class="bms_message_text">B'zのLive GYMにようこそーー！！！！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bms_clear"></div><!-- 回り込みを解除（スタイルはcssで充てる） -->
+
+                <!--メッセージ２（右側）-->
+                <!-- <div class="bms_message bms_right">
+                    <div class="bms_message_box">
+                        <div class="bms_message_content">
+                            <div class="bms_message_text">うん、まあまあいけとるな</div>
+                        </div>
+                    </div>
+                </div> -->
+                <div class="bms_clear"></div><!-- 回り込みを解除（スタイルはcssで充てる） -->
+            </div>
+
+            <!-- テキストボックス、送信ボタン④ -->
+            <div id="bms_send">
+                <textarea id="bms_send_message"></textarea>
+                <div id="bms_send_btn">送信</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<script>
+    // 日時をいい感じの形式にする関数
+    function convertFromFirestoreTimestampToDatetime(timestamp) {
+        const _d = timestamp ? new Date(timestamp * 1000) : new Date();
+        const Y = _d.getFullYear();
+        const m = (_d.getMonth() + 1).toString().padStart(2, '0');
+        const d = _d.getDate().toString().padStart(2, '0');
+        const H = _d.getHours().toString().padStart(2, '0');
+        const i = _d.getMinutes().toString().padStart(2, '0');
+        const s = _d.getSeconds().toString().padStart(2, '0');
+        return `${Y}/${m}/${d} ${H}:${i}:${s}`;
+    }
+</script>
+
+<!-- 以下にfirebaseのコードを貼り付けよう -->
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, } from "https://www.gstatic.com/firebasejs/9.1.2/firebase-firestore.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+
+        authDomain: "inabachat.firebaseapp.com",
+        projectId: "inabachat",
+        storageBucket: "inabachat.appspot.com",
+        messagingSenderId: "375554732591",
+        appId: "1:375554732591:web:a53895126ab99de24a0cda"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    const db = getFirestore(app);
+
+    $('#bms_send_btn').on('click', function () {
+        addDoc(collection(db, 'inabachat'), {
+            name: $('#bms_chat_user_name').val(),
+            text: $('#bms_send_message').val(),
+            time: serverTimestamp(),
+        });
+        $('#bms_send_message').val('')
+    });
+
+    const q = query(collection(db, 'inabachat'), orderBy('time', 'desc'));
+    onSnapshot(q, (querySnapshot) => {
+        const dataArray = [];
+        // 必要なデータだけが入った新しい配列を作成 
+        querySnapshot.docs.forEach(function (doc) {
+            const data = {
+                id: doc.id,
+                data: doc.data(),
+            }
+            dataArray.push(data);
+        });
+        const tagArray = [];
+        // `dataArray`は前回出てきたオブジェクトの配列 
+        dataArray.forEach(function (data) {
+            tagArray.push(`
+      <li id=${data.id}>
+        <p>${data.data.name}</p>
+        <p>${data.data.text}</p>
+        <p>${data.data.time.seconds}</p>
+      </li> `)
+        })
+        $('#output').html(tagArray.join(''));
+    });
+</script>
+
+</body>
+
+</html>
